@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LRU Page Replacement Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h1>Least Recently Used (LRU) Page Replacement Simulator</h1>
+
+  <section id="input-section" aria-label="Algorithm input parameters">
+    <h2>Input Parameters</h2>
+    <form id="inputForm" onsubmit="return false;">
+      <label for="pageString">Page Reference String (comma separated):</label>
+      <input type="text" id="pageString" 
+             aria-required="true" aria-describedby="pageStrDesc"
+             value="7,0,1,2,0,3,0,4,2,3,0,3,2"/>
+      <span id="pageStrDesc" class="sr-only">
+         Enter comma separated integers representing page references
+      </span>
+      <br /><br />
+      <label for="frameCount">Number of Frames:</label>
+      <input type="number" id="frameCount" value="4" min="1" max="10" aria-required="true" />
+      <br /><br />
+      <button type="button" id="startBtn" aria-label="Start LRU simulation">
+        Start Simulation
+      </button>
+    </form>
+  </section>
+
+  <section id="control-section" aria-label="Animation playback controls" style="margin-top:20px;">
+    <h2>Animation Controls</h2>
+    <button id="playBtn" disabled aria-label="Play animation">Play</button>
+    <button id="pauseBtn" disabled aria-label="Pause animation">Pause</button>
+    <button id="stepBackBtn" disabled aria-label="Step backward one step">Step Back</button>
+    <button id="stepForwardBtn" disabled aria-label="Step forward one step">Step Forward</button>
+    <label for="speedControl">Speed:</label>
+    <input type="range" id="speedControl" min="100" max="2000" step="100" value="500" 
+           aria-valuemin="100" aria-valuemax="2000" aria-valuenow="500"/>
+  </section>
+
+  <section id="stats-section" aria-label="Simulation execution statistics" style="margin-top:20px;">
+    <h2>Execution Statistics</h2>
+    <div id="statsOutput" role="table" aria-live="polite" aria-relevant="all"></div>
+    <button id="exportBtn" disabled aria-label="Export current canvas as image">Export Screenshot</button>
+    <button id="exportTraceBtn" disabled aria-label="Export execution trace JSON">Export Execution Trace</button>
+  </section>
+
+  <canvas id="animationCanvas" width="900" height="360"
+    role="img" aria-label="LRU page replacement animation visualization" style="margin-top:30px;"></canvas>
+
+  <div id="popup" class="popup-hidden" aria-live="polite" role="alert"></div>
+  
+
+
+  <script src="animation.js"></script>
+  <script src="algorithms.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>
