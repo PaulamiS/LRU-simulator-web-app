@@ -3,60 +3,410 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LRU Page Replacement Simulator</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>LRU Visual Learning Hub</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+  background: linear-gradient(135deg, #9acce7 0%, #d7b8f8 50%, #f9e3ff 100%);
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-attachment: fixed;
+}
+
+    header {
+      background: #7454a0;
+      color: rgb(255, 255, 255);
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(116, 84, 160, 0.6);
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-weight: 700;
+      font-size: 2.4rem;
+      letter-spacing: 1px;
+      text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    }
+    #animationCanvas {
+      max-width: 100%;
+      height: 380px;
+      border-radius: 15px;
+      border: 3px solid #7454a0;
+      box-shadow: 0 10px 25px rgba(116, 84, 160, 0.35);
+      background: linear-gradient(145deg, #e8e2f7, #cFCBE8);
+      display: block;
+      margin: 1.5rem auto 2rem;
+    }
+    #popup {
+      max-width: 320px;
+      margin: 0 auto 1.5rem;
+      background-color: #7f5fc1dd;
+      color: white;
+      text-align: center;
+      padding: 15px 30px;
+      font-size: 1.6rem;
+      letter-spacing: 1.2px;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      user-select: none;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease, transform 0.3s ease;
+      transform: translateY(-10px);
+      font-weight: 700;
+    }
+    #popup.popup-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .btn {
+      border-radius: 50px;
+      font-weight: 600;
+      box-shadow: 0 6px 12px rgba(116, 84, 160, 0.35);
+      transition: background-color 0.3s, box-shadow 0.3s;
+    }
+    .btn:hover:not(:disabled) {
+      box-shadow: 0 10px 20px rgba(116, 84, 160, 0.6);
+    }
+    .statistics-table {
+      max-width: 480px;
+      margin: 0 auto;
+      box-shadow: 0 10px 18px rgba(116, 84, 160, 0.15);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  </style>
 </head>
 <body>
 
-  <h1>Least Recently Used (LRU) Page Replacement Simulator</h1>
+<header>
+  <h1>LRU Page Replacement Simulator</h1>
+</header>
 
-  <section id="input-section" aria-label="Algorithm input parameters">
-    <h2>Input Parameters</h2>
-    <form id="inputForm" onsubmit="return false;">
-      <label for="pageString">Page Reference String (comma separated):</label>
-      <input type="text" id="pageString" 
-             aria-required="true" aria-describedby="pageStrDesc"
-             value="7,0,1,2,0,3,0,4,2,3,0,3,2"/>
-      <span id="pageStrDesc" class="sr-only">
-         Enter comma separated integers representing page references
-      </span>
-      <br /><br />
-      <label for="frameCount">Number of Frames:</label>
-      <input type="number" id="frameCount" value="4" min="1" max="10" aria-required="true" />
-      <br /><br />
-      <button type="button" id="startBtn" aria-label="Start LRU simulation">
-        Start Simulation
-      </button>
-    </form>
+<main class="container">
+
+  <form id="inputForm" class="row g-4 justify-content-center align-items-end mb-4">
+    <div class="col-md-7">
+      <label class="form-label">Page Reference String (comma separated)</label>
+      <input type="text" id="pageString" class="form-control form-control-lg" value="7,0,1,2,0,3,0,4" />
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Number of Frames</label>
+      <input type="number" id="frameCount" class="form-control form-control-lg" value="3" min="1" max="10" />
+    </div>
+    <div class="col-md-12 text-center mt-1">
+      <button type="button" id="startBtn" class="btn btn-primary btn-lg px-5">Start Simulation</button>
+    </div>
+  </form>
+
+  <canvas id="animationCanvas" width="900" height="380"></canvas>
+  <div id="popup"></div>
+
+  <section class="d-flex justify-content-center gap-3 mb-4 flex-wrap">
+    <button id="playBtn" class="btn btn-success btn-lg px-5" disabled>Play</button>
+    <button id="pauseBtn" class="btn btn-warning btn-lg px-5" disabled>Pause</button>
+    <button id="stepBackBtn" class="btn btn-secondary btn-lg px-5" disabled>Step Back</button>
+    <button id="stepForwardBtn" class="btn btn-secondary btn-lg px-5" disabled>Step Forward</button>
+    <label class="fs-5 mb-0 ms-3 align-self-center">Speed:</label>
+    <input type="range" id="speedControl" min="100" max="2000" step="100" value="600" class="form-range align-self-center" />
   </section>
 
-  <section id="control-section" aria-label="Animation playback controls" style="margin-top:20px;">
-    <h2>Animation Controls</h2>
-    <button id="playBtn" disabled aria-label="Play animation">Play</button>
-    <button id="pauseBtn" disabled aria-label="Pause animation">Pause</button>
-    <button id="stepBackBtn" disabled aria-label="Step backward one step">Step Back</button>
-    <button id="stepForwardBtn" disabled aria-label="Step forward one step">Step Forward</button>
-    <label for="speedControl">Speed:</label>
-    <input type="range" id="speedControl" min="100" max="2000" step="100" value="500" 
-           aria-valuemin="100" aria-valuemax="2000" aria-valuenow="500"/>
+  <section class="statistics-table text-center">
+    <h3 class="mb-3">Execution Statistics</h3>
+    <div id="statsOutput"></div>
   </section>
 
-  <section id="stats-section" aria-label="Simulation execution statistics" style="margin-top:20px;">
-    <h2>Execution Statistics</h2>
-    <div id="statsOutput" role="table" aria-live="polite" aria-relevant="all"></div>
-    <button id="exportBtn" disabled aria-label="Export current canvas as image">Export Screenshot</button>
-    <button id="exportTraceBtn" disabled aria-label="Export execution trace JSON">Export Execution Trace</button>
-  </section>
+</main>
 
-  <canvas id="animationCanvas" width="900" height="360"
-    role="img" aria-label="LRU page replacement animation visualization" style="margin-top:30px;"></canvas>
+<script>
+  const canvas = document.getElementById("animationCanvas");
+  const ctx = canvas.getContext("2d");
+  const popup = document.getElementById("popup");
 
-  <div id="popup" class="popup-hidden" aria-live="polite" role="alert"></div>
-  
+  const pageStringInput = document.getElementById("pageString");
+  const frameCountInput = document.getElementById("frameCount");
+  const startBtn = document.getElementById("startBtn");
+  const playBtn = document.getElementById("playBtn");
+  const pauseBtn = document.getElementById("pauseBtn");
+  const stepBackBtn = document.getElementById("stepBackBtn");
+  const stepForwardBtn = document.getElementById("stepForwardBtn");
+  const speedControl = document.getElementById("speedControl");
+  const statsOutput = document.getElementById("statsOutput");
 
+  let pageReferences = [];
+  let frameCount = 3;
+  let executionLog = [];
+  let pageFaultsCount = 0;
+  let currentStep = 0;
+  let animationSpeed = 600;
+  let isPlaying = false;
+  let timer = null;
 
-  <script src="animation.js"></script>
-  <script src="algorithms.js"></script>
-  <script src="ui.js"></script>
+  function parsePageReferences(str) {
+    return str.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+  }
+
+  function showPopup(message) {
+    popup.textContent = message;
+    popup.classList.add("popup-visible");
+    clearTimeout(popup.hideTimer);
+    popup.hideTimer = setTimeout(() => popup.classList.remove("popup-visible"), 1000);
+  }
+
+  function simulateLRU() {
+    let memory = [];
+    let recentUsed = new Map();
+    pageFaultsCount = 0;
+    executionLog = [];
+
+    for (let i = 0; i < pageReferences.length; i++) {
+      const page = pageReferences[i];
+      let outgoingPage = undefined;
+      let incomingIndex, outgoingIndex;
+      let pageFaultOccurred = false;
+
+      if (!memory.includes(page)) {
+        pageFaultOccurred = true;
+        pageFaultsCount++;
+        if (memory.length < frameCount) {
+          memory.push(page);
+          incomingIndex = memory.length - 1;
+        } else {
+          let lruPage = memory[0];
+          let minUsed = recentUsed.get(lruPage) ?? -1;
+          for (let j = 0; j < memory.length; j++) {
+            let lastUsed = recentUsed.get(memory[j]) ?? -1;
+            if (lastUsed < minUsed) {
+              minUsed = lastUsed;
+              lruPage = memory[j];
+            }
+          }
+          outgoingIndex = memory.indexOf(lruPage);
+          outgoingPage = lruPage;
+          memory[outgoingIndex] = page;
+          incomingIndex = outgoingIndex;
+        }
+      }
+
+      recentUsed.set(page, i);
+
+      executionLog.push({
+        step: i,
+        currentPage: page,
+        memory: [...memory],
+        pageFaultOccurred,
+        pageFaultCount: pageFaultsCount,
+        incomingPage: pageFaultOccurred ? page : undefined,
+        incomingIndex,
+        outgoingPage,
+        outgoingIndex,
+      });
+    }
+  }
+
+  function drawStep(step, anim = false, animType = "", progress = 1) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#2c3e50";
+    ctx.font = "24px Segoe UI";
+    ctx.fillText("LRU Page Replacement Simulation", 20, 40);
+
+    ctx.font = "20px Segoe UI";
+    ctx.fillText(`Step: ${step.step + 1} / ${executionLog.length}`, 20, 85);
+    ctx.fillText(`Reference Page: ${step.currentPage}`, 20, 130);
+    ctx.fillText(`Page Faults So Far: ${step.pageFaultCount}`, 20, 180);
+
+    const frameSlotWidth = 90;
+    const frameSlotHeight = 60;
+    const startX = 25;
+    const startY = 250;
+
+    ctx.font = "bold 20px Segoe UI";
+    ctx.fillText("Frames:", startX, startY - 45);
+
+    for (let i = 0; i < frameCount; i++) {
+      let x = startX + i * (frameSlotWidth + 25);
+
+      let isOutgoing = anim && animType === "exit" && i === step.outgoingIndex;
+      let isIncoming = anim && animType === "enter" && i === step.incomingIndex;
+
+      if (isOutgoing) {
+        ctx.globalAlpha = 1 - progress;
+        ctx.save();
+        ctx.translate(x + (frameSlotWidth + 100) * progress, startY + frameSlotHeight / 2);
+        ctx.rotate(progress * Math.PI / 3);
+        ctx.fillStyle = "#e74c3c";
+        ctx.fillRect(-frameSlotWidth / 2, -frameSlotHeight / 2, frameSlotWidth, frameSlotHeight);
+        ctx.restore();
+
+      } else if (isIncoming) {
+        ctx.globalAlpha = progress;
+        ctx.save();
+        ctx.translate(x - (frameSlotWidth + 100) * (1 - progress), startY + frameSlotHeight / 2);
+        ctx.fillStyle = "#27ae60";
+        ctx.fillRect(-frameSlotWidth / 2, -frameSlotHeight / 2, frameSlotWidth, frameSlotHeight);
+        ctx.restore();
+
+      } else {
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "#5499c7";
+        ctx.fillRect(x, startY, frameSlotWidth, frameSlotHeight);
+
+        if (i < step.memory.length) {
+          ctx.fillStyle = "#fff";
+          ctx.fillText(`Page ${step.memory[i]}`, x + 15, startY + frameSlotHeight / 1.5);
+        }
+      }
+
+      ctx.globalAlpha = 1;
+
+      
+      let isHit =
+        anim &&
+        animType === "hit" &&
+        step.memory[i] === step.currentPage &&
+        !step.pageFaultOccurred;
+
+      if (isHit) {
+        ctx.save();
+        ctx.globalAlpha = 0.3 + 0.7 * progress;
+        ctx.strokeStyle = "#2ecc71";
+        ctx.lineWidth = 8 * (1 - progress);
+        ctx.strokeRect(x - 5, startY - 5, frameSlotWidth + 10, frameSlotHeight + 10);
+        ctx.restore();
+      }
+    }
+
+    showPopup(step.pageFaultOccurred ? "Page Fault!" : "Page Hit ✓");
+  }
+
+  function animatePageTransition(animType, step, callback) {
+    let duration = animationSpeed;
+    let start = null;
+
+    function animate(ts) {
+      if (!start) start = ts;
+      let progress = Math.min((ts - start) / duration, 1);
+
+      drawStep(step, true, animType, progress);
+
+      if (progress < 1) requestAnimationFrame(animate);
+      else {
+        drawStep(step, false);
+        if (callback) callback();
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+
+  function handleStep(stepIdx, cb) {
+    let step = executionLog[stepIdx];
+
+    if (step.outgoingPage !== undefined) {
+      animatePageTransition("exit", step, () => {
+        if (step.incomingPage !== undefined) {
+          animatePageTransition("enter", step, () => cb && cb());
+        }
+      });
+
+    } else if (step.incomingPage !== undefined) {
+      animatePageTransition("enter", step, () => cb && cb());
+
+    } else if (!step.pageFaultOccurred) {
+      animatePageTransition("hit", step, () => cb && cb());
+
+    } else {
+      drawStep(step);
+      cb && cb();
+    }
+  }
+
+  function playAnimation() {
+    if (isPlaying) return;
+    isPlaying = true;
+    playBtn.disabled = true;
+    pauseBtn.disabled = false;
+
+    timer = setInterval(() => {
+      if (currentStep < executionLog.length) {
+        handleStep(currentStep, () => currentStep++);
+      } else {
+        pauseAnimation();
+      }
+    }, animationSpeed);
+  }
+
+  function pauseAnimation() {
+    isPlaying = false;
+    clearInterval(timer);
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
+  }
+
+  function stepForward() {
+    if (currentStep < executionLog.length) {
+      handleStep(currentStep, () => currentStep++);
+    }
+  }
+
+  function stepBack() {
+    if (currentStep > 1) {
+      currentStep -= 2;
+      drawStep(executionLog[currentStep]);
+      currentStep++;
+    } else if (currentStep === 1) {
+      currentStep = 0;
+      drawStep(executionLog[currentStep]);
+      currentStep++;
+    }
+  }
+
+  function updateStatistics() {
+    statsOutput.innerHTML = `
+      <table class="table table-striped table-bordered mt-3">
+        <thead>
+          <tr><th>Total Pages</th><th>Frames</th><th>Page Faults</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${pageReferences.length}</td>
+            <td>${frameCount}</td>
+            <td>${pageFaultsCount}</td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+  }
+
+  function initSimulation() {
+    pageReferences = parsePageReferences(pageStringInput.value);
+    frameCount = parseInt(frameCountInput.value);
+    if (frameCount < 1) frameCount = 3;
+
+    currentStep = 0;
+    simulateLRU();
+    drawStep(executionLog[currentStep]);
+    updateStatistics();
+
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
+  }
+
+  startBtn.onclick = initSimulation;
+  playBtn.onclick = playAnimation;
+  pauseBtn.onclick = pauseAnimation;
+  stepBackBtn.onclick = stepBack;
+  stepForwardBtn.onclick = stepForward;
+
+  speedControl.oninput = () => {
+    animationSpeed = speedControl.value;
+    if (isPlaying) {
+      pauseAnimation();
+      playAnimation();
+    }
+  };
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
